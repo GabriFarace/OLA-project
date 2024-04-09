@@ -64,14 +64,10 @@ Build a **non-stationary** environment for the pricing problem. At a high level:
 - The demand curve is different in each interval
 - The **noisy demand curve** specifies how many customers will buy for every price depending on the current interval
 
----
-
 ***Pricing Algorithm***  
 Build a pricing strategy using the discretization of the prices $p \in [0,1]$ and:
 - **Sliding Window**
 - **CUSUM**
-
----
 
 ***BONUS POINT***  
 Build a **two-item stochastic** pricing environment.  
