@@ -1,3 +1,5 @@
+### ENVIRONMENTS ###
+
 import numpy as np
 
 # Base Environment class
