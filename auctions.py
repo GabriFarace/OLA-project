@@ -1,3 +1,5 @@
+### AUCTIONS ###
+
 import numpy as np
 
 # Base Auction class
@@ -71,3 +73,22 @@ class FirstPriceAuction(Auction):
     def get_payments_per_click(self, winners, values, bids):
         payment = bids[winners]
         return payment.round(2)
+
+class GeneralizedFirstPriceAuction(Auction):
+    def __init__(self, click_through_rates, lambdas):
+        self.click_through_rates = click_through_rates
+        self.lambdas = lambdas
+        self.n_advertisers = len(self.click_through_rates)
+        self.n_slots = len(self.lambdas)
+    
+    def get_winners(self, bids):
+        advertisers_values = self.click_through_rates * bids
+        advertisers_ranking = np.argsort(advertisers_values)
+        winners = advertisers_ranking[-self.n_slots:]
+        winners = winners[::-1]
+        winners_values = advertisers_values[winners]
+        return np.array(winners), winners_values
+    
+    def get_payments_per_click(self, winners, values, bids):
+        payments_per_click = np.array(bids)[winners]
+        return [payment.round(2) for payment in payments_per_click]
