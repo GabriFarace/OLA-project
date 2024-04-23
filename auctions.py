@@ -4,7 +4,7 @@ import numpy as np
 
 # Base Auction class
 class Auction:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, click_through_rates, *args, **kwargs):
         pass
 
     def get_winners(self, bids):
@@ -17,6 +17,9 @@ class Auction:
         winners, values = self.get_winners(bids) # allocation mechanism
         payments_per_click = self.get_payments_per_click(winners, values, bids) # payment rule
         return winners, payments_per_click
+    
+    def get_click_through_rates(self):
+        return self.click_through_rates
 
 # Truthful Auctions
 class SecondPriceAuction(Auction):

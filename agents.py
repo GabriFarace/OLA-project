@@ -288,7 +288,7 @@ class MultiplicativePacingAgent(BiddingAgent):
         self.lmbd = np.clip(self.lmbd - self.learning_rate * (self.rho - c_t), a_min=0, a_max=1/self.rho)
         self.budget -= c_t
 
-class FFMultiplicativePacingAgent:
+class FFMultiplicativePacingAgent(BiddingAgent):
     def __init__(self, bids_set, valuation, budget, T, learning_rate):
         self.bids_set = bids_set
         self.K = len(bids_set)

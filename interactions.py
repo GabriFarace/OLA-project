@@ -43,9 +43,9 @@ class Customer:
                 The price of the product.
 
         Returns:
-            - product_purchased : bool
-                True if the customer will purchase the product, False otherwise.
+            - product_purchased : int
+                1 if the customer purchases the product, 0 otherwise.
         """
 
-        return np.random.binomial(1, self.demand_curve(price)) == 1
+        return np.random.binomial(1, self.demand_curve(price))
 
