@@ -31,13 +31,13 @@ class SecondPriceAuction(Auction):
         advertisers_values = self.click_through_rates * bids
         advertisers_ranking = np.argsort(advertisers_values)
         winner = advertisers_ranking[-1]
-        return winner, advertisers_values
+        return [winner], advertisers_values
     
     def get_payments_per_click(self, winners, values, bids):
         advertisers_ranking = np.argsort(values)
         second_winner = advertisers_ranking[-2]
-        payment = values[second_winner] / self.click_through_rates[winners]
-        return payment.round(2)
+        payment = values[second_winner] / self.click_through_rates[winners[0]]
+        return [payment.round(2)]
 
 class VCGAuction(Auction):
     def __init__(self, click_through_rates, lambdas):

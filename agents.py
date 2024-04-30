@@ -1,6 +1,7 @@
 ### AGENTS ###
 
 import numpy as np
+from utils import solve_linear_program
 
 # Base Agent class
 class Agent:
@@ -268,6 +269,43 @@ class BiddingAgent:
 
     def update(self, f_t, c_t, m_t=None):
         pass
+    
+class UCBBiddingAgent:
+    def __init__(self, available_bids, budget, T):
+        self.available_bids = available_bids
+        self.budget = budget
+        self.T = T
+        
+        self.rho = self.budget/self.T
+        self.action_t = None
+        self.average_utilities = np.zeros(len(available_bids))
+        self.average_costs = np.zeros(len(available_bids))
+        self.n_pulls = np.zeros(len(available_bids))
+        self.t = 0
+
+    def bid(self):
+        if self.budget < 1:
+            self.action_t = 0
+            
+        elif self.t < len(self.available_bids):
+            self.action_t = self.t
+            
+        else:
+             ucb_utility_values = self.average_utilities + np.sqrt(2 * np.log(self.T) / self.n_pulls)
+             ucb_cost_values = self.average_costs - np.sqrt(2 * np.log(self.T) / self.n_pulls)
+             gamma, fun = solve_linear_program(ucb_utility_values, ucb_cost_values, self.rho)
+             
+             self.action_t = np.random.choice(range(len(self.available_bids)), p=gamma)
+             
+        return self.available_bids[self.action_t]
+
+    def update(self, f_t, c_t, m_t=None):
+        self.n_pulls[self.action_t] += 1
+        self.average_utilities[self.action_t] += (f_t - self.average_utilities[self.action_t]) / self.n_pulls[self.action_t]
+        self.average_costs[self.action_t] += (c_t - self.average_costs[self.action_t]) / self.n_pulls[self.action_t]
+        self.t += 1
+        self.budget -= c_t
+    
 
 class MultiplicativePacingAgent(BiddingAgent):
     def __init__(self, valuation, budget, T, learning_rate=0.1):
