@@ -7,6 +7,7 @@ from agents import *
 from utils import *
 from scipy import optimize
 from scipy import stats
+import matplotlib.pyplot as plt
 
 '''Environment for pricing problems'''
 class PricingEnvironment:
@@ -204,7 +205,7 @@ class Interaction:
         
         for i in range(n_days):
             self._day(users_per_day[i])
-          
+    
         # return necessary data for computing clairvoyant and plotting results    
         return self.bidding_agent_utilities, self.m_t, self.pricing_agent_rewards    
     
@@ -290,20 +291,24 @@ class Requirement1:
         best_price_index = np.argmax(profit_curve)
         expected_pricing_clairvoyant_rewards = np.repeat(profit_curve[best_price_index], self.n_days)
         
-        # Compute the bidding clairvoyant
-        # The distribution of the max of k uniform random variables is a beta variable with alpha = k and beta = 1, expected_value = alpha/beta+alpha
+        '''# Compute the bidding clairvoyant
+        #The distribution of the max of k uniform random variables is a beta variable with alpha = k and beta = 1, expected_value = alpha/beta+alpha
         m_t = [n_competitors/(1 + n_competitors) for i in range(n_users)]
-        available_bids = np.linspace(0,1,int(1/(n_users**(-1/3))))
+        m_t = np.array(m_t)
         
         # 1) Compute it greedily (only in truthful auctions)
         expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities, expected_bidding_clairvoyant_payments = get_clairvoyant_truthful(self.budget, self.valuation, m_t, n_users)
           
         # 2) Compute it by solving the linear program 
         win_probabilities = stats.beta.cdf(available_bids, n_competitors, 1)
-        #expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities = get_clairvoyant_OPT(self.valuation, self.budget, n_users, win_probabilities, available_bids)
+        expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities = get_clairvoyant_OPT(self.valuation, self.budget, n_users, win_probabilities, available_bids)
         
+        since neither of those two worked the computation is done by using the true m_t vectors in the loop below
+        '''
         
         ''' DEFINE THE LOGGING VARIABLE AND START THE TRIALS'''
+        
+        available_bids = np.linspace(0,1,int(1/(n_users**(-1/3))))
         pricing_all_cumulative_regret = []
         bidding_all_cumulative_regret = []
         
@@ -337,7 +342,7 @@ class Requirement1:
             pricing_environment = StochasticPricingEnvironment(conversion_probability, self.product_cost)
             
             
-            competitors = StochasticCompetitors(len(self.ctrs) - 1, distribution)
+            competitors = StochasticCompetitors(n_competitors, distribution)
             
             ''' START THE INTERACTION'''
             
@@ -345,6 +350,11 @@ class Requirement1:
             
             bidding_agent_utilities, m_t, pricing_agent_rewards = interaction.simulates_n_days(self.n_days, self.users_per_day)
             
+            
+            ''' COMPUTE THE BIDDING CLAIRVOYANT FOR THIS TRIAL'''
+            expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities, expected_bidding_clairvoyant_payments = get_clairvoyant_truthful(self.budget, self.valuation, m_t, n_users)
+            
+            ''' LOGGING '''
             pricing_all_cumulative_regret.append(np.cumsum(expected_pricing_clairvoyant_rewards - pricing_agent_rewards))
             bidding_all_cumulative_regret.append(np.cumsum(expected_bidding_clairvoyant_utilities - bidding_agent_utilities))
         
@@ -365,23 +375,5 @@ class Requirement1:
     
 
         
-                
-n_days = 40
-users_per_day = [50 for i in range(n_days)] #20 users per day
-ctrs = [1 for i in range(4)] # company + competitors
-lambdas = [1 for i in range(2)] # 2 slots
-budget = 100
-product_cost = 0.3
-valuation = 0.5
-ucb_bidding_agent = True  #if true then the bidding agent is ucb-like, else it is multiplicative pacing
 
-n_trials = 50
-
-
-problem_params = {"n_days" : n_days, "users_per_day" : users_per_day, "ctrs" : ctrs, "lambdas" : lambdas, 
-                  "ucb_bidding_agent" : ucb_bidding_agent, "budget" : budget, "product_cost" : product_cost, "valuation" : valuation}     
-
-set_seeds(10)
-#req = Requirement1(problem_params, n_trials)
-#req.run()                         
 

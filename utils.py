@@ -67,4 +67,28 @@ def get_clairvoyant_OPT(my_valuation, B, n_users, win_probabilities, available_b
       expected_clairvoyant_bids = [sum(available_bids*gamma*win_probabilities) for u in range(n_users)]
       return expected_clairvoyant_bids, expected_clairvoyant_utilities   
          
-      
+'''plt.plot(m_t)
+plt.xlabel('$t$')
+plt.ylabel('$m_t$')
+plt.title('Sequence of m_t')
+plt.show()
+
+plt.plot(bidding_agent_utilities)
+plt.xlabel('$t$')
+plt.ylabel('$f_t$')
+plt.title('Bidding Agent Utilies')
+plt.show()
+
+plt.plot(self.bidding_agent_bids)
+plt.xlabel('$t$')
+plt.ylabel('$b_t$')
+plt.title('Agent Bids')
+plt.legend()
+plt.show()  
+
+plt.plot(np.cumsum(self.bidding_agent_payments))
+plt.xlabel('$t$')
+plt.ylabel('$\sum c_t$')
+plt.legend()
+plt.title('Cumulative Payments of bidding Agent')
+plt.show()'''    
