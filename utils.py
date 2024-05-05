@@ -67,6 +67,31 @@ def get_clairvoyant_OPT(my_valuation, B, n_users, win_probabilities, available_b
       expected_clairvoyant_bids = [sum(available_bids*gamma*win_probabilities) for u in range(n_users)]
       return expected_clairvoyant_bids, expected_clairvoyant_utilities   
          
+
+
+
+def get_bidding_adversarial_sequence(n_competitors, n_users, alpha, beta):
+    bids = lambda n_competitors, a, b: np.random.uniform(a, b, n_competitors)
+    a_s = np.random.beta(alpha, beta, n_users)/2
+    b_s = 1 - np.random.beta(alpha, beta, n_users)/2
+    
+    bids_sequence = [bids(n_competitors, a_s[i], b_s[i]) for i in range(n_users)]
+    bids_sequence = np.array(bids_sequence)
+
+    return bids_sequence
+
+def get_pricing_adversarial_sequence(prices, max_visits, n_days, alpha, beta):
+    conversion_probability = lambda p, theta: 1-theta*p
+    thetas = np.random.beta(alpha, beta, n_days)
+    
+    demands_t_p_n = [[[
+        np.random.binomial(n=i+1, p=conversion_probability(price, thetas[k])) 
+        for i in range(max_visits)] 
+        for price in  prices] 
+        for k in range(n_days)]
+    return demands_t_p_n    
+        
+
 '''plt.plot(m_t)
 plt.xlabel('$t$')
 plt.ylabel('$m_t$')

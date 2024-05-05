@@ -176,6 +176,23 @@ class PricingAgent:
     def update(self, reward_t):
         pass
 
+# Pricing Agent with prices discretized and bandit feedback
+class EXP3PricingAgent(PricingAgent):
+    def __init__(self, prices, T):
+        self.prices = prices
+        self.K = len(prices)
+        learning_rate = np.sqrt(np.log(self.K)/(self.K*T))
+        
+        self.exp3_agent = EXP3Agent(self.K, learning_rate)
+        
+
+    def set_price(self):
+        return self.prices[self.exp3_agent.pull_arm()]
+
+    def update(self, reward_t):
+        self.exp3_agent.update(1-reward_t)
+
+
 # Gaussian Process based agents
 class GPUCBAgent(PricingAgent):
     # From the agent's POV, the action set is [0,1]. If the actual actions are outside this

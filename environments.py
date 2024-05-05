@@ -72,7 +72,14 @@ class AdversarialBanditEnvironment(Environment):
         return loss_t
 
 # Environment for pricing problems
-class PricingEnvironment(Environment):
+class PricingEnvironment:
+    def __init__(self):
+        pass
+
+    def round(self, price_t, n_t):
+        pass
+
+class StochasticPricingEnvironment(PricingEnvironment):
     def __init__(self, conversion_probability, cost):
         self.conversion_probability = conversion_probability
         self.cost = cost
@@ -80,4 +87,67 @@ class PricingEnvironment(Environment):
     def round(self, price_t, n_t):
         demand_t = np.random.binomial(n=n_t, p=self.conversion_probability(price_t))
         reward_t = demand_t * (price_t - self.cost)
-        return demand_t, reward_t
+        return demand_t, reward_t    
+
+class AdversarialPricingEnvironment(PricingEnvironment):
+    def __init__(self, demands_t_p_n, cost, T, prices):
+        self.prices = prices
+        self.demands_t_p_n = demands_t_p_n
+        self.cost = cost
+        self.T = T
+        self.t = 0
+        
+    def round(self, price_t, n_t):
+        i_price = -1
+        for i in range(len(self.prices)):
+            if(self.prices[i] == price_t):
+               i_price = i 
+        demand_t = self.demands_t_p_n[self.t][i_price][n_t-1]
+        reward_t = demand_t * (price_t - self.cost)
+        self.t += 1
+        return demand_t, reward_t    
+
+# Competitors for the auction problem
+class Competitors:
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def get_bids(self):
+        pass
+
+class StochasticCompetitors(Competitors):
+
+    def __init__(self, n_competitors, distribution):
+
+        self.n_competitors = n_competitors
+        self.distribution = distribution
+
+    def get_bids(self):
+
+        # Sample bids from the distribution
+        bids = self.distribution(self.n_competitors)
+
+        # Get the maximum bid
+        m_t = np.max(bids)
+
+        return bids, m_t
+    
+class AdversarialCompetitors(Competitors):
+
+    def __init__(self, bids_sequence, T):
+
+        self.bids_sequence = bids_sequence
+        self.T = T
+        self.t = 0
+
+    def get_bids(self):
+
+        bids = self.bids_sequence[self.t, :]
+
+        # Get the maximum bid
+        m_t = np.max(bids)
+        
+        self.t += 1
+
+        return bids, m_t    
