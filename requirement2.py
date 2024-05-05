@@ -105,7 +105,7 @@ class Requirement2:
             
             
             ''' COMPUTE THE PRICING CLAIRVOYANT FOR THIS TRIAL'''
-            print(visits_per_day)
+            
             demands_t_p = [[
                 (demands_t_p_n[i][j][visits_per_day[i]-1])/visits_per_day[i]
                 for j in range(len(prices))] 
