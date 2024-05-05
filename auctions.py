@@ -23,7 +23,8 @@ class Auction:
 
 # Truthful Auctions
 class SecondPriceAuction(Auction):
-    def __init__(self, click_through_rates):
+    def __init__(self, click_through_rates, lambdas):
+        self.lambdas = self.lambdas
         self.click_through_rates = click_through_rates
         self.n_advertisers = len(self.click_through_rates)
     
@@ -63,7 +64,8 @@ class VCGAuction(Auction):
 
 # Non-Truthful Auctions
 class FirstPriceAuction(Auction):
-    def __init__(self, click_through_rates):
+    def __init__(self, click_through_rates, lambdas):
+        self.lambdas = self.lambdas
         self.click_through_rates = click_through_rates
         self.n_advertisers = len(self.click_through_rates)
 

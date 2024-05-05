@@ -1,10 +1,10 @@
 from requirement2 import *
 from requirement1 import *
 
-n_days = 5000
-users_per_day = [10 for i in range(n_days)] #20 users per day
-ctrs = [1 for i in range(4)] # company + competitors
-lambdas = [1 for i in range(2)] # 2 slots
+n_days = 50
+users_per_day = [1000 for i in range(n_days)] #20 users per day
+ctrs = [0.8 for i in range(4)] # company + competitors
+lambdas = [0.9, 0.6] # 2 slots
 budget = 10000
 product_cost = 0.1
 valuation = 1

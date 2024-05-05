@@ -55,9 +55,15 @@ class Requirement2:
 
                   
         # Compute it by solving the linear program 
-        m_t = bids_sequence.max(axis=1)
-        win_probabilities = np.array([sum(b > m_t)/n_users for b in available_bids])
-        expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities = get_clairvoyant_OPT(self.valuation, self.budget, n_users, win_probabilities, available_bids)
+        # Sort each row in descending order
+        bids_sequence = np.sort(bids_sequence, axis=1)[:, ::-1]
+        
+        # Extract maxima
+        m_t = []
+        for i in range(len(self.lambdas)):
+            m_t.append(bids_sequence[:, i])
+        m_t = np.array(m_t)    
+        expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities = get_clairvoyant_OPT(self.valuation * self.ctrs[0], self.budget, n_users, m_t, available_bids, self.lambdas)
         
         
         

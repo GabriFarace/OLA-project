@@ -58,8 +58,26 @@ def get_clairvoyant_truthful(B, my_valuation, m_t, n_users):
         i+=1
     return clairvoyant_bids, clairvoyant_utilities, clairvoyant_payments    
 
-def get_clairvoyant_OPT(my_valuation, B, n_users, win_probabilities, available_bids):
-      f = (my_valuation-available_bids)*win_probabilities
+def get_clairvoyant_OPT(my_valuation, B, n_users, m_t, available_bids, lambdas):
+    
+      my_valuations = np.array([])
+      for b in available_bids:
+          lambda_b = 0
+          count = 0
+          y = np.count_nonzero(b > m_t[0])
+          for i in range(len(lambdas)):
+              x = np.count_nonzero(b >= m_t[i]);
+              if(i != 0):
+                 x -= y
+                 y = x
+              count += x
+              lambda_b += x*lambdas[i]
+          if (count != 0):    
+              lambda_b = lambda_b/count  
+          my_valuations = np.append(my_valuations, my_valuation*lambda_b)
+          
+      win_probabilities = np.array([sum(b >= m_t[len(lambdas) - 1])/n_users for b in available_bids])
+      f = (my_valuations-available_bids)*win_probabilities
       ct = available_bids*win_probabilities
       rho = B/n_users
       gamma, value = solve_linear_program(f, ct, rho)

@@ -50,9 +50,10 @@ class Company:
         #payment could be m_t in case of truthful auction, or the bid itself in case of non truthful auctions
         win = auction_results['company_win']
         payment = auction_results['company_payment']
+        l = auction_results["company_slot_lambda"]
 
         # Compute utility
-        f_t = (self.valuation - payment) * win
+        f_t = (self.valuation * l *   - payment) * win
 
         # Compute cost
         c_t = payment * win
@@ -101,7 +102,7 @@ class Publisher:
 
         auction_results = {
             'company_win': company_win,
-            'company_slot': company_slot,
+            'company_slot_lambda': self.auction.lambdas[company_slot],
             'company_payment': company_payment,
             'm_t': m_t
         }

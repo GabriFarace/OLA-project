@@ -80,13 +80,13 @@ class Requirement1:
             else:
                 bidding_agent = UCBBiddingAgent( available_bids, self.budget, n_users)
             
-            company = Company(pricing_agent, bidding_agent, self.valuation, self.product_cost)
+            company = Company(pricing_agent, bidding_agent, self.valuation * self.ctrs[0] , self.product_cost)
             
             
             '''DEFINE THE PUBLISHER I.E. THE AUCTION TYPE (IN THIS CASE A TRUTHFUL AUCTION)'''
             
             # Define the auction type
-            auction = SecondPriceAuction(self.ctrs)
+            auction = SecondPriceAuction(self.ctrs, self.lambdas)
             
             publisher = Publisher(auction)
             
@@ -107,7 +107,7 @@ class Requirement1:
             
             
             ''' COMPUTE THE BIDDING CLAIRVOYANT FOR THIS TRIAL'''
-            expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities, expected_bidding_clairvoyant_payments = get_clairvoyant_truthful(self.budget, self.valuation, m_t, n_users)
+            expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities, expected_bidding_clairvoyant_payments = get_clairvoyant_truthful(self.budget, self.valuation * self.ctrs[0] * self.lambdas[0], m_t, n_users)
             
             ''' LOGGING '''
             pricing_all_cumulative_regret.append(np.cumsum(expected_pricing_clairvoyant_rewards - pricing_agent_rewards))
