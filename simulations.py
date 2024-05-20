@@ -2,15 +2,15 @@ from requirement2 import *
 from requirement1 import *
 
 n_days = 50
-users_per_day = [1000 for i in range(n_days)] #20 users per day
-ctrs = [0.8 for i in range(4)] # company + competitors
-lambdas = [0.9, 0.6] # 2 slots
-budget = 10000
+users_per_day = [100 for i in range(n_days)] #20 users per day
+ctrs = [0.8, 1, 1, 1] # company + competitors
+lambdas = [1, 0.9] # 2 slots
+budget = 1000
 product_cost = 0.1
 valuation = 1
-ucb_bidding_agent = False  #if true then the bidding agent is ucb-like, else it is multiplicative pacing
+ucb_bidding_agent = True  #if true then the bidding agent is ucb-like, else it is multiplicative pacing
 
-n_trials = 20
+n_trials = 1
 
 
 problem_params = {"n_days" : n_days, "users_per_day" : users_per_day, "ctrs" : ctrs, "lambdas" : lambdas, 

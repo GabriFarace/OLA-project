@@ -12,12 +12,13 @@ from scipy import stats
 ''' Company class '''
 class Company:
 
-    def __init__(self, pricing_agent, bidding_agent, valuation, product_cost):
+    def __init__(self, pricing_agent, bidding_agent, valuation, ctr, product_cost):
 
         self.pricing_agent = pricing_agent
         self.bidding_agent = bidding_agent
         self.valuation = valuation
         self.product_cost = product_cost
+        self.ctr = ctr
     
     def set_price(self):
 
@@ -53,10 +54,10 @@ class Company:
         l = auction_results["company_slot_lambda"]
 
         # Compute utility
-        f_t = (self.valuation * l *   - payment) * win
+        f_t = ((self.ctr * self.valuation * l)  - (self.ctr * l * payment)) * win
 
         # Compute cost
-        c_t = payment * win
+        c_t = (self.ctr * l * payment) * win
 
         return f_t, c_t
 
@@ -71,7 +72,7 @@ class Publisher:
         self.auction = auction
 
     
-    def round(self, bid, competitor_bids, m_t):
+    def round(self, bid, competitor_bids, m_t, index_max):
 
         # Append the competitor bids to the company's bid
         bids = np.append(bid, competitor_bids)
@@ -104,7 +105,7 @@ class Publisher:
             'company_win': company_win,
             'company_slot_lambda': self.auction.lambdas[company_slot],
             'company_payment': company_payment,
-            'm_t': m_t
+            'm_t': m_t*self.auction.click_through_rates[index_max]
         }
 
         return auction_results, click_outcome
@@ -145,10 +146,10 @@ class Interaction:
         for user in range(n_users):
             # Company and Competitors bids
             bid = self.company.bid()
-            competitor_bids, m_t_round = self.competitors.get_bids() 
+            competitor_bids, m_t_round, index_max = self.competitors.get_bids() 
             
             # Publisher runs the auction and simulates the click outcome
-            auction_results, click_outcome = self.publisher.round(bid, competitor_bids, m_t_round)
+            auction_results, click_outcome = self.publisher.round(bid, competitor_bids, m_t_round, index_max)
 
             # Update the company's bidding strategy and get utility and payment of the company for this round
             f_t, c_t = self.company.update_bidding_strategy(auction_results)
@@ -161,7 +162,7 @@ class Interaction:
             self.bidding_agent_bids = np.append(self.bidding_agent_bids, bid)
             self.bidding_agent_utilities = np.append(self.bidding_agent_utilities, f_t)
             self.bidding_agent_payments = np.append(self.bidding_agent_payments, c_t)
-            self.m_t = np.append(self.m_t, m_t_round)
+            self.m_t = np.append(self.m_t, auction_results['m_t'])
                 
         # Get the reward for this day for the pricing agent  
         if (n_visits == 0):

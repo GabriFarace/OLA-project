@@ -39,9 +39,10 @@ def solve_linear_program(f, ct, rho):
 
 
 
-def get_clairvoyant_truthful(B, my_valuation, m_t, n_users):
+def get_clairvoyant_truthful(B, my_valuation, lam, m_t, n_users):
     ## I compute my sequence of utilities at every round
-    utility = (my_valuation-m_t)*(my_valuation>=m_t)
+    payment = m_t*lam
+    utility = ((my_valuation*lam) - payment)*(my_valuation>=m_t)
     ## Now I have to find the sequence of m_t summing up to budget B and having the maximum sum of utility
     ## In second price auctions, I can find the sequence **greedily**:
     sorted_round_utility = np.flip(np.argsort(utility)) # sorted rounds, from most profitable to less profitable
@@ -53,20 +54,21 @@ def get_clairvoyant_truthful(B, my_valuation, m_t, n_users):
     while c <= B-1 and i < n_users:
         clairvoyant_bids[sorted_round_utility[i]] = my_valuation
         clairvoyant_utilities[sorted_round_utility[i]] = utility[sorted_round_utility[i]]
-        clairvoyant_payments[sorted_round_utility[i]] = m_t[sorted_round_utility[i]]
-        c += m_t[sorted_round_utility[i]]
+        clairvoyant_payments[sorted_round_utility[i]] = payment[sorted_round_utility[i]]
+        c += payment[sorted_round_utility[i]]
         i+=1
     return clairvoyant_bids, clairvoyant_utilities, clairvoyant_payments    
 
-def get_clairvoyant_OPT(my_valuation, B, n_users, m_t, available_bids, lambdas):
+def get_clairvoyant_OPT(my_valuation, ctr, B, n_users, m_t, available_bids, lambdas):
     
       my_valuations = np.array([])
+      lambdas_b = np.array([])
       for b in available_bids:
           lambda_b = 0
           count = 0
-          y = np.count_nonzero(b > m_t[0])
+          y = np.count_nonzero(b*ctr > m_t[0])
           for i in range(len(lambdas)):
-              x = np.count_nonzero(b >= m_t[i]);
+              x = np.count_nonzero(b*ctr >= m_t[i]);
               if(i != 0):
                  x -= y
                  y = x
@@ -74,11 +76,12 @@ def get_clairvoyant_OPT(my_valuation, B, n_users, m_t, available_bids, lambdas):
               lambda_b += x*lambdas[i]
           if (count != 0):    
               lambda_b = lambda_b/count  
-          my_valuations = np.append(my_valuations, my_valuation*lambda_b)
+          my_valuations = np.append(my_valuations, my_valuation*lambda_b*ctr)
+          lambdas_b = np.append(lambdas_b, b*lambda_b*ctr)
           
-      win_probabilities = np.array([sum(b >= m_t[len(lambdas) - 1])/n_users for b in available_bids])
-      f = (my_valuations-available_bids)*win_probabilities
-      ct = available_bids*win_probabilities
+      win_probabilities = np.array([sum(b*ctr >= m_t[len(lambdas) - 1])/n_users for b in available_bids])
+      f = (my_valuations-lambdas_b)*win_probabilities
+      ct = lambdas_b*win_probabilities
       rho = B/n_users
       gamma, value = solve_linear_program(f, ct, rho)
       expected_clairvoyant_utilities = [value for u in range(n_users)]

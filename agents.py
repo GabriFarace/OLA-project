@@ -344,11 +344,12 @@ class MultiplicativePacingAgent(BiddingAgent):
         self.budget -= c_t
 
 class FFMultiplicativePacingAgent(BiddingAgent):
-    def __init__(self, bids_set, valuation, budget, T, learning_rate):
+    def __init__(self, bids_set, valuation, ctr, budget, T, learning_rate):
         self.bids_set = bids_set
         self.K = len(bids_set)
         self.hedge = HedgeAgent(self.K, np.sqrt(np.log(self.K) / T)) # learning rate from theory
         self.valuation = valuation
+        self.ctr = ctr
         self.budget = budget
         self.T = T
         self.learning_rate = learning_rate
@@ -363,8 +364,8 @@ class FFMultiplicativePacingAgent(BiddingAgent):
     
     def update(self, f_t, c_t, m_t):
         # Update the Hedge agent
-        f_t_full = np.array([(self.valuation - b) * int(b >= m_t) for b in self.bids_set])
-        c_t_full = np.array([b * int(b >= m_t) for b in self.bids_set])
+        f_t_full = np.array([((self.valuation * self.ctr) - (b * self.ctr)) * int(b*self.ctr >= m_t) for b in self.bids_set])
+        c_t_full = np.array([b*self.ctr * int(b*self.ctr >= m_t) for b in self.bids_set])
         L = f_t_full - self.lmbd * (c_t_full - self.rho)
         L_range = 2 + (1 - self.rho) / self.rho
         self.hedge.update((2 - L) / L_range) # Hedge needs losses in [0,1]

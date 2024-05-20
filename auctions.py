@@ -24,7 +24,7 @@ class Auction:
 # Truthful Auctions
 class SecondPriceAuction(Auction):
     def __init__(self, click_through_rates, lambdas):
-        self.lambdas = self.lambdas
+        self.lambdas = lambdas
         self.click_through_rates = click_through_rates
         self.n_advertisers = len(self.click_through_rates)
     
@@ -65,7 +65,7 @@ class VCGAuction(Auction):
 # Non-Truthful Auctions
 class FirstPriceAuction(Auction):
     def __init__(self, click_through_rates, lambdas):
-        self.lambdas = self.lambdas
+        self.lambdas = lambdas
         self.click_through_rates = click_through_rates
         self.n_advertisers = len(self.click_through_rates)
 
@@ -80,21 +80,20 @@ class FirstPriceAuction(Auction):
         return payment.round(2)
 
 class GeneralizedFirstPriceAuction(Auction):
-    def __init__(self, ad_qualities,lambdas):
-        self.ad_qualities = ad_qualities
+    def __init__(self, click_through_rates, lambdas):
+        self.click_through_rates = click_through_rates
         self.lambdas = lambdas
-        self.n_advertisers = len(ad_qualities)
+        self.n_advertisers = len(self.click_through_rates)
         self.n_slots = len(self.lambdas)
-   
+    
     def get_winners(self, bids):
-        bids = np.array(bids)
-        advertisers_values = self.ad_qualities*bids
+        advertisers_values = self.click_through_rates * bids
         advertisers_ranking = np.argsort(advertisers_values)
         winners = advertisers_ranking[-self.n_slots:]
         winners = winners[::-1]
         winners_values = advertisers_values[winners]
         return np.array(winners), winners_values
-   
+    
     def get_payments_per_click(self, winners, values, bids):
         payments_per_click = np.array(bids)[winners]
         return [payment.round(2) for payment in payments_per_click]

@@ -130,8 +130,9 @@ class StochasticCompetitors(Competitors):
 
         # Get the maximum bid
         m_t = np.max(bids)
+        index_max = np.argmax(bids) + 1
 
-        return bids, m_t
+        return bids, m_t, index_max
     
 class AdversarialCompetitors(Competitors):
 
@@ -147,7 +148,8 @@ class AdversarialCompetitors(Competitors):
 
         # Get the maximum bid
         m_t = np.max(bids)
+        index_max = np.argmax(bids) + 1
         
         self.t += 1
 
-        return bids, m_t    
+        return bids, m_t, index_max    

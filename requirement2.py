@@ -56,17 +56,18 @@ class Requirement2:
                   
         # Compute it by solving the linear program 
         # Sort each row in descending order
-        bids_sequence = np.sort(bids_sequence, axis=1)[:, ::-1]
-        
+        bids_seq = np.sort(bids_sequence, axis=1)[:, ::-1]
+        max_indices = np.argsort(bids_sequence, axis=1)[:, ::-1]
         # Extract maxima
         m_t = []
         for i in range(len(self.lambdas)):
-            m_t.append(bids_sequence[:, i])
+            ctr_max = np.array([self.ctrs[i+1] for i in max_indices[:, i]])
+            m_t.append(bids_seq[:, i]*ctr_max)
         m_t = np.array(m_t)    
-        expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities = get_clairvoyant_OPT(self.valuation * self.ctrs[0], self.budget, n_users, m_t, available_bids, self.lambdas)
+        expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities = get_clairvoyant_OPT(self.valuation , self.ctrs[0], self.budget, n_users, m_t, available_bids, self.lambdas)
         
         
-        
+    
         ''' DEFINE THE LOGGING VARIABLE AND START THE TRIALS'''
         
         pricing_all_cumulative_regret = []
@@ -81,10 +82,10 @@ class Requirement2:
             
             # Define the bidding agent
             learning_rate = 1/np.sqrt(n_users)
-            bidding_agent = FFMultiplicativePacingAgent(available_bids, self.valuation, self.budget, n_users, learning_rate)
+            bidding_agent = FFMultiplicativePacingAgent(available_bids, self.valuation, self.ctrs[0], self.budget, n_users, learning_rate)
 
             
-            company = Company(pricing_agent, bidding_agent, self.valuation, self.product_cost)
+            company = Company(pricing_agent, bidding_agent, self.valuation, self.ctrs[0], self.product_cost)
             
             
             '''DEFINE THE PUBLISHER I.E. THE AUCTION TYPE (IN THIS CASE A NON-TRUTHFUL AUCTION)'''
@@ -126,6 +127,7 @@ class Requirement2:
             ''' LOGGING '''
             pricing_all_cumulative_regret.append(np.cumsum((1 - pricing_agent_rewards) - expected_pricing_clairvoyant_losses))
             bidding_all_cumulative_regret.append(np.cumsum(expected_bidding_clairvoyant_utilities - bidding_agent_utilities))
+
         
         pricing_all_cumulative_regret = np.array(pricing_all_cumulative_regret)
         bidding_all_cumulative_regret = np.array(bidding_all_cumulative_regret)
