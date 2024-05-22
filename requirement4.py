@@ -18,7 +18,7 @@ def find_index(winners, i):
  
 class Requirement4:       
     def __init__(self, params):
-        type_of_bidders = 2
+        type_of_bidders = 3
         # Parameters of the problem
         self.n_users = params["n_users"]    
         self.lambdas = np.sort(np.array(params["lambdas"]))[::-1]
@@ -30,21 +30,14 @@ class Requirement4:
     def run(self):
  
         bids_set =  np.linspace(0,1,11) # np.linspace(0,1,int(self.n_users**(1/3)))
-        print(bids_set)
         bidders = []
         bids_log = []
         n_slots = len(self.lambdas)
  
-        """
-        for i in range(bidders_per_type):
-            bidders.append(UCBBiddingAgent(bids_set, budget[i], n_users))
-            bidders.append(MultiplicativePacingAgent(valuation[i], budget[i], n_users, learning_rate))
-            bidders.append(FFMultiplicativePacingAgent(bids_set, valuation[i], budget[i], n_users, learning_rate))
-        """
- 
         for i in range( self.bidders_per_type ):
             bidders.append(UCBBiddingAgentExpert( self.valuations[i], bids_set, self.budget, self.n_users ))
             bidders.append(MultiplicativePacingAgent(self.valuations[i], self.budget, self.n_users))
+            bidders.append(FFMultiplicativePacingAgent(bids_set, self.valuations[i], self.budget, self.n_users))
  
         n_bidders = len(bidders)
  
@@ -83,10 +76,11 @@ class Requirement4:
             m_t = np.sort(m_t, axis=1)[:,::-1]
             m_t = m_t[:,:n_slots]
  
-            available_bids = np.linspace(0,1,11)
+            available_bids = np.linspace(0,b.valuation,21)
             win_prob =  np.array([np.sum(bd > m_t, axis=0)/self.n_users for bd in available_bids])
             diff_prob = win_prob[:,1:]-win_prob[:,:-1]
             win_prob = np.append(win_prob[:,:1], diff_prob, axis=1)
+            print(win_prob)
             avg_lambdas = np.dot(win_prob,self.lambdas)
            
             f = (b.valuation-available_bids)*avg_lambdas
@@ -96,8 +90,9 @@ class Requirement4:
             gamma, per_round_utility = solve_linear_program(f, ct, rho)
             clvoy_per_round_utility.append(per_round_utility)
        
-        print("finished computing clairvoyant")
+        print("\nfinished computing clairvoyant")
 
+        print("\nAgents' utility")
         for i, bidder in enumerate(bidders):
             print(i, bidder.get_utility(), clvoy_per_round_utility[i]*self.n_users)
 
