@@ -1,5 +1,7 @@
 import numpy as np
+from agents import HedgeAgent
 from utils import *
+
 
 def find_rank(bid, m_t):
     for i in range(len(m_t)):
@@ -20,6 +22,9 @@ class BiddingAgent:
 
     def get_utility(self):
         return np.array(self.utility).sum()
+    
+    def get_log(self):
+        return self.log_bids, self.log_slots
 
 class UCBBiddingAgentExpert(BiddingAgent):
     def __init__(self, valuation, available_bids, budget, T):
@@ -36,6 +41,9 @@ class UCBBiddingAgentExpert(BiddingAgent):
         self.t = 0
         self.utility = []
         self.log_win = np.zeros(5)
+
+        self.log_bids = []
+        self.log_slots = []
 
     def bid(self):
         if self.budget < 1:
@@ -55,6 +63,7 @@ class UCBBiddingAgentExpert(BiddingAgent):
             # print()
             self.action_t = np.random.choice(range(len(self.available_bids)), p=gamma)
 
+        self.log_bids.append(self.available_bids[self.action_t])
         return self.available_bids[self.action_t]
 
     def update(self, lambdas, slot, c_t, m_t=None):
@@ -82,8 +91,13 @@ class UCBBiddingAgentExpert(BiddingAgent):
         self.utility.append(f_t)
         self.budget -= c_t
 
+        self.log_slots.append(slot)
+
     def get_utility(self):
         return np.array(self.utility).sum()
+    
+    def get_log(self):
+        return self.log_bids, self.log_slots
 
 class MultiplicativePacingAgent(BiddingAgent):
     def __init__(self, valuation, budget, T, learning_rate=0.1):
@@ -96,9 +110,14 @@ class MultiplicativePacingAgent(BiddingAgent):
         self.t = 0
         self.utility = []
 
+        self.log_bids = []
+        self.log_slots = []
+
     def bid(self):
         if self.budget < 1:
             return 0
+
+        self.log_bids.append(self.valuation / (self.lmbd + 1))
         return self.valuation / (self.lmbd + 1)
 
     def update(self, lambdas, slot, c_t, m_t=None):
@@ -108,15 +127,18 @@ class MultiplicativePacingAgent(BiddingAgent):
             self.utility.append(self.valuation*lambdas[slot] - c_t)
         else:
             self.utility.append(0)
-
+        self.log_slots.append(slot)
 
     def get_utility(self):
         return np.array(self.utility).sum()
     
+    def get_log(self):
+        return self.log_bids, self.log_slots
+    
 
 class FFMultiplicativePacingAgent(BiddingAgent):
-    def __init__(self, bids_set, valuation, budget, T, learning_rate):
-        self.bids_set = bids_set
+    def __init__(self, bids_set, valuation, budget, T, learning_rate=0.1):
+        self.bids_set = np.linspace(0,valuation,11)
         self.K = len(bids_set)
         self.hedge = HedgeAgent(self.K, np.sqrt(np.log(self.K) / T)) # learning rate from theory
         self.valuation = valuation
@@ -127,10 +149,15 @@ class FFMultiplicativePacingAgent(BiddingAgent):
         self.lmbd = 1
         self.t = 0
         self.utility = []
+
+        self.log_bids = []
+        self.log_slots = []
     
     def bid(self):
         if self.budget < 1:
             return 0
+        
+        self.log_bids.append(self.bids_set[self.hedge.pull_arm()])
         return self.bids_set[self.hedge.pull_arm()]
     
     def update(self, lambdas, slot, c_t, m_t):
@@ -160,6 +187,11 @@ class FFMultiplicativePacingAgent(BiddingAgent):
             self.utility.append(self.valuation*lambdas[slot] - c_t)
         else:
             self.utility.append(0)
+
+        self.log_slots.append(slot)
     
     def get_utility(self):
         return np.array(self.utility).sum()
+    
+    def get_log(self):
+        return self.log_bids, self.log_slots
