@@ -12,8 +12,9 @@ ucb_bidding_agent = True  #if true then the bidding agent is ucb-like, else it i
 set_seeds(18) 
        
 n_users = 1000
-valuations = [0.5, 0.6, 0.7, 0.8, 0.9]
- 
+#valuations = [0.5, 0.6, 0.7, 0.8, 0.9]
+valuations = [0.8, 0.8, 0.8]
+
 problem_params = {"n_users" : n_users, "lambdas" : lambdas,
                  "budget" : budget, "valuations" : valuations}    
  

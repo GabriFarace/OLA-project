@@ -35,9 +35,9 @@ class UCBBiddingAgentExpert(BiddingAgent):
 
         self.rho = self.budget/self.T
         self.action_t = None
-        self.average_utilities = np.zeros(len(available_bids))
-        self.average_costs = np.zeros(len(available_bids))
-        self.n_pulls = np.zeros(len(available_bids))
+        self.average_utilities = np.zeros(len(self.available_bids))
+        self.average_costs = np.zeros(len(self.available_bids))
+        self.n_pulls = np.zeros(len(self.available_bids))
         self.t = 0
         self.utility = []
         self.log_win = np.zeros(5)
@@ -53,7 +53,7 @@ class UCBBiddingAgentExpert(BiddingAgent):
             self.action_t = np.random.choice(range(len(self.available_bids)))
 
         else:
-            ucb_utility_values = self.average_utilities + np.sqrt(2 * np.log(self.t) / self.t)
+            ucb_utility_values = self.average_utilities  #+ np.sqrt(2 * np.log(self.t) / self.t)
             ucb_cost_values = self.average_costs - np.sqrt(2 * np.log(self.t) / self.t)
             gamma, fun = solve_linear_program(ucb_utility_values, ucb_cost_values, self.rho)            
             # print(self.t)
@@ -81,7 +81,7 @@ class UCBBiddingAgentExpert(BiddingAgent):
             #print(rank, f, c)
             self.average_utilities[i] += (f - self.average_utilities[i]) / self.t
             self.average_costs[i] += (c - self.average_costs[i]) / self.t
-        self.log_win[slot] += 1
+        
         #print()
         # Update bidder status
         f_t = 0
@@ -98,6 +98,148 @@ class UCBBiddingAgentExpert(BiddingAgent):
     
     def get_log(self):
         return self.log_bids, self.log_slots
+
+
+class UCBBiddingAgentExpertUpdateRho(BiddingAgent):
+    def __init__(self, valuation, budget, T):
+        self.available_bids = np.linspace(0,valuation,11)
+        self.valuation = valuation
+        self.budget = budget
+        self.T = T
+
+        self.rho = self.budget/self.T
+        self.action_t = None
+        self.average_utilities = np.zeros(len(self.available_bids))
+        self.average_costs = np.zeros(len(self.available_bids))
+        self.n_pulls = np.zeros(len(self.available_bids))
+        self.t = 0
+        self.utility = []
+        self.log_win = np.zeros(5)
+
+        self.log_bids = []
+        self.log_slots = []
+
+    def bid(self):
+        if self.budget < 1:
+            self.action_t = 0
+
+        elif self.t == 0:
+            self.action_t = np.random.choice(range(len(self.available_bids)))
+
+        else:
+            ucb_utility_values = self.average_utilities  #+ np.sqrt(2 * np.log(self.t) / self.t)
+            ucb_cost_values = self.average_costs #- np.sqrt(2 * np.log(self.t) / self.t)
+            gamma, fun = solve_linear_program(ucb_utility_values, ucb_cost_values, self.rho)            
+            self.rho = self.budget/ (self.T - self.t)
+            self.action_t = np.random.choice(range(len(self.available_bids)), p=gamma)
+
+        self.log_bids.append(self.available_bids[self.action_t])
+        return self.available_bids[self.action_t]
+
+    def update(self, lambdas, slot, c_t, m_t=None):
+
+        # Update bidding strategy
+        self.t += 1
+        #print(self.valuation, self.t)
+        for i, b in enumerate(self.available_bids):
+            rank = find_rank(b, m_t)
+            if rank != -1:
+                f = (self.valuation-b)*lambdas[rank]
+                c = b
+            else:
+                f = c = 0
+            #print(rank, f, c)
+            self.average_utilities[i] += (f - self.average_utilities[i]) / self.t
+            self.average_costs[i] += (c - self.average_costs[i]) / self.t
+        
+        #print()
+        # Update bidder status
+        f_t = 0
+        if slot != -1:
+            f_t = self.valuation*lambdas[slot]-c_t
+        #print(f_t, lambdas[slot], c_t )
+        self.utility.append(f_t)
+        self.budget -= c_t
+
+        self.log_slots.append(slot)
+
+    def get_utility(self):
+        return np.array(self.utility).sum()
+    
+    def get_log(self):
+        return self.log_bids, self.log_slots
+
+
+class UCBBiddingAgentBandit(BiddingAgent):
+    def __init__(self, valuation, budget, T):
+        self.available_bids = np.linspace(0,valuation,int(T**(1/3)))
+        self.valuation = valuation
+        self.budget = budget
+        self.T = T
+
+        self.rho = self.budget/self.T
+        self.action_t = None
+        self.average_utilities = np.zeros(len(self.available_bids))
+        self.average_costs = np.zeros(len(self.available_bids))
+        self.n_pulls = np.zeros(len(self.available_bids))
+        self.t = 0
+        self.utility = []
+        self.log_win = np.zeros(5)
+
+        self.log_bids = []
+        self.log_slots = []
+
+    def bid(self):
+        if self.budget < 1:
+            self.action_t = 0
+
+        elif self.t < len(self.available_bids):
+            self.action_t = self.t
+
+        else:
+            ucb_utility_values = self.average_utilities + np.sqrt(2 * np.log(self.T) / self.n_pulls)
+            ucb_cost_values = self.average_costs - np.sqrt(2 * np.log(self.T) / self.n_pulls)
+            gamma, fun = solve_linear_program(ucb_utility_values, ucb_cost_values, self.rho)         
+            # print(self.t)
+            # print(gamma)
+            # print(ucb_utility_values)
+            # print(ucb_cost_values)
+            # print()
+            self.action_t = np.random.choice(range(len(self.available_bids)), p=gamma)
+
+        self.log_bids.append(self.available_bids[self.action_t])
+        return self.available_bids[self.action_t]
+
+    def update(self, lambdas, slot, c_t, m_t=None):
+
+        # Update bidding strategy
+        self.n_pulls[self.action_t] += 1
+        
+        #print(self.valuation, self.t)
+        
+        #print()
+        # Update bidder status
+        f_t = 0
+        
+        if slot != -1:
+            f_t = self.valuation*lambdas[slot]-c_t
+        #print(f_t, lambdas[slot], c_t )
+        
+        self.average_utilities[self.action_t] += (f_t - self.average_utilities[self.action_t]) / self.n_pulls[self.action_t]
+        self.average_costs[self.action_t] += (c_t - self.average_costs[self.action_t]) / self.n_pulls[self.action_t]
+
+        self.t += 1
+        self.utility.append(f_t)
+        self.budget -= c_t
+
+        self.log_slots.append(slot)
+
+    def get_utility(self):
+        return np.array(self.utility).sum()
+    
+    def get_log(self):
+        return self.log_bids, self.log_slots
+
 
 class MultiplicativePacingAgent(BiddingAgent):
     def __init__(self, valuation, budget, T, learning_rate=0.1):

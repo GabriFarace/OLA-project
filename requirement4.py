@@ -1,6 +1,7 @@
 from agents4 import *
 from auctions import *
 from utils import *
+import sys
 
 class DebugBidder():
     def __init__(self, K):
@@ -18,7 +19,7 @@ def find_index(winners, i):
  
 class Requirement4:       
     def __init__(self, params):
-        type_of_bidders = 3
+        type_of_bidders = 4
         # Parameters of the problem
         self.n_users = params["n_users"]    
         self.lambdas = np.sort(np.array(params["lambdas"]))[::-1]
@@ -36,6 +37,7 @@ class Requirement4:
  
         for i in range( self.bidders_per_type ):
             bidders.append(UCBBiddingAgentExpert( self.valuations[i], bids_set, self.budget, self.n_users ))
+            bidders.append(UCBBiddingAgentExpertUpdateRho( self.valuations[i], self.budget, self.n_users ))
             bidders.append(MultiplicativePacingAgent(self.valuations[i], self.budget, self.n_users))
             bidders.append(FFMultiplicativePacingAgent(bids_set, self.valuations[i], self.budget, self.n_users))
  
@@ -76,11 +78,11 @@ class Requirement4:
             m_t = np.sort(m_t, axis=1)[:,::-1]
             m_t = m_t[:,:n_slots]
  
-            available_bids = np.linspace(0,b.valuation,21)
+            available_bids = np.linspace(0,b.valuation,101)
             win_prob =  np.array([np.sum(bd > m_t, axis=0)/self.n_users for bd in available_bids])
             diff_prob = win_prob[:,1:]-win_prob[:,:-1]
             win_prob = np.append(win_prob[:,:1], diff_prob, axis=1)
-            print(win_prob)
+            #print(win_prob)
             avg_lambdas = np.dot(win_prob,self.lambdas)
            
             f = (b.valuation-available_bids)*avg_lambdas
@@ -96,6 +98,18 @@ class Requirement4:
         for i, bidder in enumerate(bidders):
             print(i, bidder.get_utility(), clvoy_per_round_utility[i]*self.n_users)
 
+        np.savetxt("output.csv", bids_log, delimiter=",")
+
+        log_utility = []
+        for b in bidders:
+            log_utility.append( b.utility )
+        log_utility = np.array(log_utility)
+        log_utility = log_utility.cumsum(axis=1)
+        np.savetxt("utility.csv", log_utility)
+
+        clvoy_utility = np.ones((12,1000)) * np.reshape(clvoy_per_round_utility,(12,1))
+        clvoy_utility = clvoy_utility.cumsum(axis=1)
+        np.savetxt("clvoy_utility", clvoy_utility)
         # Compute cumulative regret for each bidder
         # Should we average on bidders of the same type?
  
