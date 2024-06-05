@@ -1,5 +1,4 @@
 import numpy as np
-from agents import HedgeAgent
 from utils import *
 
 
@@ -28,7 +27,7 @@ class BiddingAgent:
 
 class UCBBiddingAgentExpert(BiddingAgent):
     def __init__(self, valuation, available_bids, budget, T):
-        self.available_bids = np.linspace(0,valuation,11)
+        self.available_bids = np.linspace(0,valuation,101)
         self.valuation = valuation
         self.budget = budget
         self.T = T
@@ -54,7 +53,7 @@ class UCBBiddingAgentExpert(BiddingAgent):
 
         else:
             ucb_utility_values = self.average_utilities  #+ np.sqrt(2 * np.log(self.t) / self.t)
-            ucb_cost_values = self.average_costs - np.sqrt(2 * np.log(self.t) / self.t)
+            ucb_cost_values = self.average_costs #- np.sqrt(2 * np.log(self.t) / self.t)
             gamma, fun = solve_linear_program(ucb_utility_values, ucb_cost_values, self.rho)            
             # print(self.t)
             # print(gamma)
@@ -102,7 +101,7 @@ class UCBBiddingAgentExpert(BiddingAgent):
 
 class UCBBiddingAgentExpertUpdateRho(BiddingAgent):
     def __init__(self, valuation, budget, T):
-        self.available_bids = np.linspace(0,valuation,11)
+        self.available_bids = np.linspace(0,valuation,101)
         self.valuation = valuation
         self.budget = budget
         self.T = T
@@ -278,10 +277,29 @@ class MultiplicativePacingAgent(BiddingAgent):
         return self.log_bids, self.log_slots
     
 
+class HedgeAgent:
+    def __init__(self, K, learning_rate):
+        self.K = K
+        self.learning_rate = learning_rate
+        self.weights = np.ones(K)
+        self.x_t = np.ones(K) / K # normalized weights (initial uniform distribution)
+        self.action_t = None
+        self.t = 0
+
+    def pull_arm(self):
+        self.x_t = self.weights / self.weights.sum()
+        self.action_t = np.random.choice(np.arange(self.K), p=self.x_t)
+        return self.action_t
+
+    def update(self, loss_t):
+        self.weights *= np.exp(-self.learning_rate * loss_t)
+        self.t += 1
+
+
 class FFMultiplicativePacingAgent(BiddingAgent):
     def __init__(self, bids_set, valuation, budget, T, learning_rate=0.1):
-        self.bids_set = np.linspace(0,valuation,11)
-        self.K = len(bids_set)
+        self.bids_set = np.linspace(0,valuation,101)
+        self.K = len( self.bids_set )
         self.hedge = HedgeAgent(self.K, np.sqrt(np.log(self.K) / T)) # learning rate from theory
         self.valuation = valuation
         self.budget = budget
@@ -315,14 +333,16 @@ class FFMultiplicativePacingAgent(BiddingAgent):
                 f_t_full[i] = c_t_full[i] = 0
 
         L = f_t_full - self.lmbd * (c_t_full - self.rho)
-        L_range = 2 + (1 - self.rho) / self.rho
-        self.hedge.update((2 - L) / L_range) # Hedge needs losses in [0,1]
+        L_range = np.max(L) - np.min(L)
+        self.hedge.update( 1+( np.min(L) - L) / L_range) # Hedge needs losses in [0,1]
 
         # Update the Lagrangian multiplier
         self.lmbd = np.clip(self.lmbd - self.learning_rate * (self.rho - c_t), a_min=0, a_max=1/self.rho)
 
         # Update the budget
         self.budget -= c_t 
+
+        self.t += 1
 
         # Update utility
         if slot != -1:

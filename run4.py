@@ -13,7 +13,7 @@ set_seeds(18)
        
 n_users = 1000
 #valuations = [0.5, 0.6, 0.7, 0.8, 0.9]
-valuations = [0.8, 0.8, 0.8]
+valuations = [0.78, 0.8, 0.82]
 
 problem_params = {"n_users" : n_users, "lambdas" : lambdas,
                  "budget" : budget, "valuations" : valuations}    

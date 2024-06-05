@@ -1,7 +1,7 @@
 from agents4 import *
 from auctions import *
 from utils import *
-import sys
+import matplotlib.pyplot as plt
 
 class DebugBidder():
     def __init__(self, K):
@@ -112,5 +112,12 @@ class Requirement4:
         np.savetxt("clvoy_utility", clvoy_utility)
         # Compute cumulative regret for each bidder
         # Should we average on bidders of the same type?
- 
+
+        #plt.plot( bids_log[:,3] )
+        plt.figure(figsize = [17, 4.8])
+        # plt.plot( bidders[3].utility )
+        plt.plot( bids_log[:,4] )
+        plt.plot( bids_log[:,5] )
+        #plt.plot( bids_log[:,11] )
+        plt.savefig("./output3.png")
         # Plot
