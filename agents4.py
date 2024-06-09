@@ -44,6 +44,16 @@ class UCBBiddingAgentExpert(BiddingAgent):
         self.log_bids = []
         self.log_slots = []
 
+        #plot puropses
+        self.name = "UCB_classic " +str(self.valuation)
+        self.color = "red"
+
+    def get_name(self):
+        return self.name
+
+    def get_color(self):
+        return self.color
+    
     def bid(self):
         if self.budget < 1:
             self.action_t = 0
@@ -117,7 +127,17 @@ class UCBBiddingAgentExpertUpdateRho(BiddingAgent):
 
         self.log_bids = []
         self.log_slots = []
+        
+        #plot puropses
+        self.name = "UCB_rho " +str(self.valuation)
+        self.color = "orange"
 
+    def get_name(self):
+        return self.name
+
+    def get_color(self):
+        return self.color
+    
     def bid(self):
         if self.budget < 1:
             self.action_t = 0
@@ -253,7 +273,17 @@ class MultiplicativePacingAgent(BiddingAgent):
 
         self.log_bids = []
         self.log_slots = []
+        
+        #plot puropses
+        self.name = "Multiplicative " +str(self.valuation)
+        self.color = "blue"
 
+    def get_name(self):
+        return self.name
+
+    def get_color(self):
+        return self.color
+    
     def bid(self):
         if self.budget < 1:
             return 0
@@ -312,7 +342,17 @@ class FFMultiplicativePacingAgent(BiddingAgent):
 
         self.log_bids = []
         self.log_slots = []
+
+        #plot puropses
+        self.name = "FF_multiplicative " +str(self.valuation)
+        self.color = "green"
     
+    def get_name(self):
+        return self.name
+
+    def get_color(self):
+        return self.color
+
     def bid(self):
         if self.budget < 1:
             return 0
@@ -334,6 +374,8 @@ class FFMultiplicativePacingAgent(BiddingAgent):
 
         L = f_t_full - self.lmbd * (c_t_full - self.rho)
         L_range = np.max(L) - np.min(L)
+        if L_range < 1e-8:
+            L_range = 1
         self.hedge.update( 1+( np.min(L) - L) / L_range) # Hedge needs losses in [0,1]
 
         # Update the Lagrangian multiplier
