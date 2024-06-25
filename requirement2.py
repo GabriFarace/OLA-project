@@ -18,7 +18,14 @@ class Requirement2:
         self.product_cost = params["product_cost"]
         self.budget = params["budget"]
         self.n_trials = n_trials
+ 
         
+ 
+    
+ 
+    
+ 
+    '''INTERACTION PRICING AND BIDDING'''
     def run(self):
         # Discretized prices 
         K = int(1/(self.n_days**(-1/3)))  # discretization as prescribed by the theory
@@ -139,12 +146,253 @@ class Requirement2:
         
         plot_regret(bidding_all_cumulative_regret, "Bidding FFMultiplicativePacing Agent Average Regret", n_users, self.n_trials)
     
+ 
     
+ 
    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+    
+    '''ONLY BIDDING'''    
+    def run_bidding(self):    
+
+        
+        # The first ctr is the one of the company
+        n_competitors = len(self.ctrs)-1
+        
+        # Number of users for  the bidding algorithm accross all days
+        n_users = np.sum(self.users_per_day)  
+        
+        # Discretized bids for the adversarial problem
+        available_bids = np.linspace(0,1,int(1/(n_users**(-1/3))))
+    
+        
+        ''' DEFINE THE ADVERSARIAL COMPONENTS'''
+        # Define the adversarial sequence of bids of the competitors
+        bids_sequence = get_bidding_adversarial_sequence(n_competitors, n_users, 1, 1)
+        
+        
+        ''' COMPUTE THE CLAIRVOYANT'''
+        
+        # Compute the bidding clairvoyant
+
+                  
+        # Compute it by solving the linear program 
+        # Sort each row in descending order
+        bids_seq = np.sort(bids_sequence, axis=1)[:, ::-1]
+        max_indices = np.argsort(bids_sequence, axis=1)[:, ::-1]
+        # Extract maxima
+        m_t = []
+        for i in range(len(self.lambdas)):
+            ctr_max = np.array([self.ctrs[i+1] for i in max_indices[:, i]])
+            m_t.append(bids_seq[:, i]*ctr_max)
+        m_t = np.array(m_t)    
+        expected_bidding_clairvoyant_bids, expected_bidding_clairvoyant_utilities = get_clairvoyant_OPT(self.valuation , self.ctrs[0], self.budget, n_users, m_t, available_bids, self.lambdas)
+        
+        
+    
+        ''' DEFINE THE LOGGING VARIABLE AND START THE TRIALS'''
+        
+        bidding_all_cumulative_regret = []
+        
+        def compute_utility_and_cost(auction_results):
+
+            #payment could be m_t in case of truthful auction, or the bid itself in case of non truthful auctions
+            win = auction_results['company_win']
+            payment = auction_results['company_payment']
+            l = auction_results["company_slot_lambda"]
+
+            # Compute utility
+            f_t = ((self.ctrs[0] * self.valuation * l)  - (self.ctrs[0] * l * payment)) * win
+
+            # Compute cost
+            c_t = (self.ctrs[0] * l * payment) * win
+
+            return f_t, c_t
+        
+        
+        for i in range(self.n_trials):
+            
+            # Define the bidding agent
+            learning_rate = 1/np.sqrt(n_users)
+            bidding_agent = FFMultiplicativePacingAgent(available_bids, self.valuation, self.ctrs[0], self.budget, n_users, learning_rate)
+
+            
+            
+            '''DEFINE THE PUBLISHER I.E. THE AUCTION TYPE (IN THIS CASE A NON-TRUTHFUL AUCTION)'''
+            
+            # Define the auction type
+            auction = GeneralizedFirstPriceAuction(self.ctrs, self.lambdas)
+            
+            publisher = Publisher(auction)
+            
+            
+            '''DEFINE THE ADVERSARIAL ENVIRONMENT I.E. THE ADVERSARIAL COMPETITORS '''
+            
+            competitors = AdversarialCompetitors(bids_sequence, n_users)
+            
+            ''' START THE INTERACTION'''
+            
+        
+        
+            bidding_agent_utilities = np.array([])
+            
+            # Company faces a series of auctions
+            for user in range(n_users):
+                # Company and Competitors bids
+                bid = bidding_agent.bid()
+                competitor_bids, m_t_round, index_max = competitors.get_bids() 
+                
+                # Publisher runs the auction and simulates the click outcome
+                auction_results, click_outcome = publisher.round(bid, competitor_bids, m_t_round, index_max)
+
+                # Update the bidding strategy and get utility and payment of the company for this round
+                
+                # Compute utility and cost
+                f_t, c_t = compute_utility_and_cost(auction_results)
+                m_t_round = auction_results['m_t']
+
+                # Update bidding strategy
+                bidding_agent.update(f_t, c_t, m_t_round)
+
+                    
+                # Logging
+            
+                bidding_agent_utilities = np.append(bidding_agent_utilities, f_t)
+              
+            
+            
+            
+            ''' LOGGING '''
+
+            bidding_all_cumulative_regret.append(np.cumsum(expected_bidding_clairvoyant_utilities - bidding_agent_utilities))
+
+        
+        bidding_all_cumulative_regret = np.array(bidding_all_cumulative_regret)
+        
+        
+        ''' PLOT THE AVERAGE REGRETS OF THE BIDDING AGENT'''
+        
+        
+        plot_regret(bidding_all_cumulative_regret, "Bidding FFMultiplicativePacing Agent Average Regret", n_users, self.n_trials)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+    ''' ONLY PRICING'''   
+    def run_pricing(self, n_customers):   
+        
+        # Discretized prices 
+        K = int(1/(self.n_days**(-1/3)))  # discretization as prescribed by the theory
+        min_price, max_price = 0, 1
+        prices = np.linspace(min_price, max_price, K)
+        
+            
+        ''' DEFINE THE ADVERSARIAL COMPONENTS'''
+        # Define the sequence of demands for each day, price and number of visits demands_t_p_n
+        demands_t_p_n = get_pricing_adversarial_sequence(prices, n_customers, self.n_days, 1, 1)
         
         
         
+        # Reward function for the pricing problem
+
+        reward_function = lambda price, n_sales: (price-self.product_cost)*n_sales    
         
+    
+        ''' DEFINE THE LOGGING VARIABLE AND START THE TRIALS'''
+        
+        pricing_all_cumulative_regret = []
+        
+        def rescale(x, min_x, max_x):
+                return min_x + (max_x-min_x)*x
+            
+    
+               
+        for i in range(self.n_trials):
+          
+            
+            # Define the pricing agent
+            pricing_agent = EXP3PricingAgent(prices, self.n_days)
+      
+            
+            '''DEFINE THE ADVERSARIAL PRICING ENVIRONMENT'''
+            
+        
+            pricing_environment = AdversarialPricingEnvironment(demands_t_p_n, self.product_cost, self.n_days, prices)
+                 
+            
+            ''' START THE INTERACTION'''
+            
+            pricing_agent_rewards = np.array([])
+            for t in range(self.n_days):
+                p_t = pricing_agent.set_price()
+                p_t = rescale(p_t, min_price, max_price)
+                d_t, r_t = pricing_environment.round(p_t, n_t=n_customers)
+                pricing_agent.update(r_t/n_customers)
+                pricing_agent_rewards = np.append(pricing_agent_rewards, r_t/n_customers)
+            
+            
+            ''' COMPUTE THE PRICING CLAIRVOYANT FOR THIS TRIAL'''
+            
+            demands_t_p = [[
+                (demands_t_p_n[i][j][n_customers-1])/n_customers
+                for j in range(len(prices))] 
+                for i in range(self.n_days)] 
+                
+            loss_curve_t = 1 - np.array([np.array(reward_function(prices, np.array(demands_t_p[i]))) for i in range(self.n_days)])
+            
+            # Best arm(price) in hindsight
+            best_arm = np.argmin(loss_curve_t.sum(axis=0))
+            expected_pricing_clairvoyant_losses = loss_curve_t[:, best_arm]
+            
+            ''' LOGGING '''
+            pricing_all_cumulative_regret.append(np.cumsum((1 - pricing_agent_rewards) - expected_pricing_clairvoyant_losses))
+
+        
+        pricing_all_cumulative_regret = np.array(pricing_all_cumulative_regret)
+        
+        
+        ''' PLOT THE AVERAGE REGRETS OF THE PRICING AGENT'''
+        plot_regret(pricing_all_cumulative_regret, "Pricing EXP3 Agent Average Regret", self.n_days, self.n_trials)
+        
+        
+    
+    
         
         
         
