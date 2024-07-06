@@ -61,6 +61,8 @@ def get_clairvoyant_truthful(B, my_valuation, lam, m_t, n_users):
 
 def get_clairvoyant_OPT(my_valuation, ctr, B, n_users, m_t, available_bids, lambdas):
     
+      ''' compute for each possible bid a weighted lambda using all the lambdas
+          with the weight given as the ratio in which the bid surpass the first maximum, second maximum and so on '''
       my_valuations = np.array([])
       lambdas_b = np.array([])
       for b in available_bids:
@@ -78,7 +80,8 @@ def get_clairvoyant_OPT(my_valuation, ctr, B, n_users, m_t, available_bids, lamb
               lambda_b = lambda_b/count  
           my_valuations = np.append(my_valuations, my_valuation*lambda_b*ctr)
           lambdas_b = np.append(lambdas_b, b*lambda_b*ctr)
-          
+        
+      '''solve the linear program '''
       win_probabilities = np.array([sum(b*ctr >= m_t[len(lambdas) - 1])/n_users for b in available_bids])
       f = (my_valuations-lambdas_b)*win_probabilities
       ct = lambdas_b*win_probabilities
@@ -113,28 +116,3 @@ def get_pricing_adversarial_sequence(prices, max_visits, n_days, alpha, beta):
     return demands_t_p_n    
         
 
-'''plt.plot(m_t)
-plt.xlabel('$t$')
-plt.ylabel('$m_t$')
-plt.title('Sequence of m_t')
-plt.show()
-
-plt.plot(bidding_agent_utilities)
-plt.xlabel('$t$')
-plt.ylabel('$f_t$')
-plt.title('Bidding Agent Utilies')
-plt.show()
-
-plt.plot(self.bidding_agent_bids)
-plt.xlabel('$t$')
-plt.ylabel('$b_t$')
-plt.title('Agent Bids')
-plt.legend()
-plt.show()  
-
-plt.plot(np.cumsum(self.bidding_agent_payments))
-plt.xlabel('$t$')
-plt.ylabel('$\sum c_t$')
-plt.legend()
-plt.title('Cumulative Payments of bidding Agent')
-plt.show()'''    
