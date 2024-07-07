@@ -114,5 +114,18 @@ def get_pricing_adversarial_sequence(prices, max_visits, n_days, alpha, beta):
         for price in  prices] 
         for k in range(n_days)]
     return demands_t_p_n    
-        
+
+
+def find_rank(bid, m_t):
+    for i in range(len(m_t)):
+        if bid >= m_t[i]:
+            return i
+    return -1
+
+
+def find_index(winners, i):
+    for j in range(len(winners)):
+        if winners[j] == i:
+            return j
+    return -1
 
