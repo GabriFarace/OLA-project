@@ -2,7 +2,8 @@
 
 This repository contains the source code of the project for the Online Learning Applications course at Politecnico di Milano.
 
-The goal of this project is to design online learning algorithms to **handle a marketing campaign to sell products**. This includes:
+The goal of this project is to design online learning algorithms to **handle a marketing campaign to sell products**.  
+This includes:
 - an **advertising** campaign
 - a **pricing** problem
 
